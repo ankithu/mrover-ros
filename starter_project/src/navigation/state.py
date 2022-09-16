@@ -55,6 +55,7 @@ class DoneState(BaseState):
         )
 
     def evaluate(self, ud):
+        print("in done")
         # Stop rover
         cmd_vel = Twist()
         self.context.rover.send_drive_command(cmd_vel)

@@ -17,16 +17,17 @@ class Rover:
     ctx: Context
 
     def get_pose(self) -> Optional[SE3]:
-        #TODO: return the pose of the rover (or None if we don't have one (catch exception))
-        pass
+        try:
+            return SE3.from_tf_tree(self.ctx.tf_buffer, parent_frame="map", child_frame="base_link")
+        except:
+            print("no pose")
+            return None
 
     def send_drive_command(self, twist: Twist):
-        #TODO: send the twist message to the rover
-        pass
+        self.ctx.vel_cmd_publisher.publish(twist)
 
     def send_drive_stop(self):
-        #TODO: tell the rover to stop
-        pass
+        self.send_drive_command(Twist())
 
 @dataclass
 class Environment:
@@ -43,13 +44,13 @@ class Environment:
         Retrieves the last recieved message regarding fid pose
         if it exists, otherwise returns None (hint: you will need to create an additonal instance variable in the class)
         """
-        #TODO:
-        pass
+        if self.fid_pos is not None:
+            return self.id_pos
         
 
     def recieve_fid_data(self, message : StarterProjectTag):
         #TODO: (fill in the correct type for message) and handle incoming FID data messages here
-        pass
+        self.fid_pos = message
         
 
 

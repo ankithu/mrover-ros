@@ -29,15 +29,24 @@ class Navigation(threading.Thread):
         self.sis = smach_ros.IntrospectionServer("", self.state_machine, "/SM_ROOT")
         self.sis.start()
         with self.state_machine:
-            #TODO: add DriveState and its transitions here
+            self.state_machine.add(
+                "DriveState",
+                DriveState(self.context),
+                transitions={"reached_point": "TargetState", "driving_to_point" : "DriveState"}
+            )
             self.state_machine.add(
                 "DoneState",
                 DoneState(self.context),
                 transitions={"done": "DoneState"},
             )
-            #TODO: add TagSeekState and its transitions here
+            self.state_machine.add(
+                "TargetState",
+                TagSeekState(self.context),
+                transitions={"failure":"TargetState", "working":"TargetState", "success":"DoneState"}
+            )
             
     def run(self):
+        print("running state machine")
         self.state_machine.execute()
 
     def stop(self):
@@ -51,6 +60,7 @@ class Navigation(threading.Thread):
 
 def main():
     # TODO: init a node called "navigation"
+    rospy.init_node("navigation")
 
     # context and navigation objects
     context = Context()
@@ -63,6 +73,7 @@ def main():
         try:
             sys.exit(0)
         except SystemExit:
+            # TODO: not really sure why needed but it is bugging me! >:(
             pass
 
     signal.signal(signal.SIGINT, sigint_handler)
