@@ -3,6 +3,7 @@
 // ROS Headers, ros namespace
 #include <image_transport/image_transport.h>
 #include <ros/init.h>
+#include <iostream>
 
 int main(int argc, char** argv) {
     ros::init(argc, argv, "starter_project_perception"); // Our node name (See: http://wiki.ros.org/Nodes)
@@ -18,17 +19,18 @@ int main(int argc, char** argv) {
 
 namespace mrover {
 
-    Perception::Perception() : mNodeHandle{} {
-        image_transport::ImageTransport imageTransport(mNodeHandle);
+        Perception::Perception() : mNodeHandle{}, mImageTransport{mNodeHandle} {
         // Subscribe to camera image messages
         // Every time another node publishes to this topic we will be notified
         // Specifically the callback we passed will be invoked
-        imageTransport.subscribe("camera/color/image_raw", 1, &Perception::imageCallback, this);
+        mImageSubscriber = mImageTransport.subscribe("camera/color/image_raw", 1, &Perception::imageCallback, this);
 
         // Create a publisher for our tag topic
         // See: http://wiki.ros.org/ROS/Tutorials/WritingPublisherSubscriber%28c%2B%2B%29
         // TODO: uncomment me!
-        // mTagPublisher = mNodeHandle.advertise<StarterProjectTag>("tag", 1);
+        mTagPublisher = mNodeHandle.advertise<StarterProjectTag>("tag", 1);
+
+        mTagDictionary = cv::aruco::getPredefinedDictionary(0);
     }
 
     void Perception::imageCallback(sensor_msgs::ImageConstPtr const& image) {
@@ -36,26 +38,30 @@ namespace mrover {
         // Detect tags in the image pixels
         findTagsInImage(cvImage, mTags);
         // Select the tag that is closest to the middle of the screen
-        StarterProjectTag tag = selectTag(mTags);
-        // Publish the message to our topic so navigation or others can receive it
-        publishTag(tag);
+        if (mTags.size() > 0){
+            StarterProjectTag tag = selectTag(mTags);
+            // Publish the message to our topic so navigation or others can receive it
+            publishTag(tag);
+        }
+        
     }
 
     void Perception::findTagsInImage(cv_bridge::CvImagePtr const& image, std::vector<StarterProjectTag>& tags) {
         // hint: you have mTagDictionary, mTagCorners, mTagIds, and mTagDetectorParams member variables already defined!
         // hint: you can access the raw image (cv::Mat) with image->image
         // hint: write and use the "getCenterFromTagCorners" and "getClosenessMetricFromTagCorners" functions
-
+        std::cout << "here 1" << std::endl;
         tags.clear(); // Clear old tags in output vector
         cv::aruco::detectMarkers(image->image, mTagDictionary, mTagCorners, mTagIds);
         for (size_t i = 0; i < mTagIds.size(); ++i) {
+            std::cout << "here 2:" << i << std::endl;
             auto corner = mTagCorners[i];
             auto id = mTagIds[i];
             auto[x, y] = getCenterFromTagCorners(corner);
             float dist = getClosenessMetricFromTagCorners(image->image, corner);
             StarterProjectTag tag;
             tag.id = id;
-            tag.x = x;
+            tag.x = x - (image->image.cols / 2);
             tag.y = y;
             tag.dist = dist;
             tags.push_back(tag);
@@ -96,6 +102,7 @@ namespace mrover {
 
     std::pair<float, float> Perception::getCenterFromTagCorners(const std::vector<cv::Point2f>& tagCorners) {
         // TODO: implement me!
+        std::cout << "center call" << std::endl;
         float xAv, yAv;
         for (auto corner : tagCorners){
             xAv += corner.x / 4.0;

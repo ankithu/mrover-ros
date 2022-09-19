@@ -22,13 +22,16 @@ class TagSeekState(BaseState):
         angular_approx = fid.x
         distance_approx = fid.dist
         print(angular_approx, distance_approx)
-        if angular_approx < 10 and distance_approx > 0.4:
+        if angular_approx < 20 and distance_approx > 0.008:
             return 'success'
         #TODO: figure out the twist command to be applied to move rover to tag
         command = Twist()
         #TODO: send Twist command to rover
-        command.linear.x = 1 / distance_approx
-        command.angular.z = 0.04 * angular_approx
+        print(f"distance approx: {distance_approx}, angular: {angular_approx}")
+        if angular_approx < 20:
+            command.linear.x = 1 - distance_approx
+        command.angular.z = -0.005 * angular_approx
+        print(f"command lin: {command.linear.x}, command angular: {command.angular.z}")
         self.context.rover.send_drive_command(command)
         #TODO: stay in the TagSeekState (with outcome 'working')
         return 'working'

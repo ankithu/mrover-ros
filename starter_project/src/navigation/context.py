@@ -45,7 +45,7 @@ class Environment:
         if it exists, otherwise returns None (hint: you will need to create an additonal instance variable in the class)
         """
         if self.fid_pos is not None:
-            return self.id_pos
+            return self.fid_pos
         
 
     def recieve_fid_data(self, message : StarterProjectTag):
